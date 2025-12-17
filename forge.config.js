@@ -14,7 +14,6 @@ module.exports = {
         authors: "Accenture",
         exe: "AccentureDesktop.exe",
         setupExe: "AccentureDesktopSetup.exe",
-        setupIcon: "assets/icon.ico", // 如果你有图标文件的话
       },
     },
     {
