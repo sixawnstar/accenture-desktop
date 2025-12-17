@@ -12,21 +12,21 @@ module.exports = {
   },
   rebuildConfig: {},
   makers: [
-    {
-      name: "@electron-forge/maker-squirrel",
-      config: {
-        name: "accenture-desktop", // 和packagerConfig的name一致
-        description: "Accenture Desktop Application",
-        authors: "Your Name",
-        // 关键：显式指定exe文件路径（打包后默认在out/accenture-desktop-win32-x64/下）
-        exe: "./out/accenture-desktop-win32-x64/accenture-desktop.exe",
-        // 可选：指定安装包文件名
-        setupExe: "AccentureDesktop-Setup.exe",
-      },
-    },
+    // {
+    //   name: "@electron-forge/maker-squirrel",
+    //   config: {
+    //     name: "accenture-desktop", // 和packagerConfig的name一致
+    //     description: "Accenture Desktop Application",
+    //     authors: "Your Name",
+    //     // 关键：显式指定exe文件路径（打包后默认在out/accenture-desktop-win32-x64/下）
+    //     exe: "./out/accenture-desktop-win32-x64/accenture-desktop.exe",
+    //     // 可选：指定安装包文件名
+    //     setupExe: "AccentureDesktop-Setup.exe",
+    //   },
+    // },
     {
       name: "@electron-forge/maker-zip",
-      platforms: ["darwin"],
+      platforms: ["win32"],
     },
     {
       name: "@electron-forge/maker-deb",
