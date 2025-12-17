@@ -4,16 +4,24 @@ const { FuseV1Options, FuseVersion } = require("@electron/fuses");
 module.exports = {
   packagerConfig: {
     asar: true,
+    platform: "win32",
+    arch: "x64",
+    name: "accenture-desktop", // 和package.json的name完全一致（小写+连字符）
+    // 可选：强制指定打包后的exe文件名，避免自动驼峰转换
+    executableName: "accenture-desktop",
   },
   rebuildConfig: {},
   makers: [
     {
       name: "@electron-forge/maker-squirrel",
       config: {
-        name: "AccentureDesktop",
-        authors: "Accenture",
-        exe: "AccentureDesktop.exe",
-        setupExe: "AccentureDesktopSetup.exe",
+        name: "accenture-desktop", // 和packagerConfig的name一致
+        description: "Accenture Desktop Application",
+        authors: "Your Name",
+        // 关键：显式指定exe文件路径（打包后默认在out/accenture-desktop-win32-x64/下）
+        exe: "./out/accenture-desktop-win32-x64/accenture-desktop.exe",
+        // 可选：指定安装包文件名
+        setupExe: "AccentureDesktop-Setup.exe",
       },
     },
     {
