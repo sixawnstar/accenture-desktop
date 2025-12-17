@@ -1,0 +1,44 @@
+# 工作流名称
+name: Electron Build Windows EXE
+
+# 触发条件：提交代码到main分支时自动运行，也可手动触发
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch: # 手动触发开关
+
+# 任务配置
+jobs:
+  build-windows:
+    # 指定运行在GitHub的Windows虚拟机中（核心：用云端Windows环境打包）
+    runs-on: windows-latest
+    
+    # 打包步骤
+    steps:
+      # 步骤1：拉取GitHub仓库的代码到Windows虚拟机
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 步骤2：安装Node.js（指定和你本地一致的版本，比如18.x）
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18.x
+          cache: 'npm' # 缓存npm依赖，加速下次打包
+
+      # 步骤3：安装项目依赖（包括electron-forge）
+      - name: Install dependencies
+        run: npm install
+
+      # 步骤4：执行Electron Forge打包（生成Windows exe）
+      - name: Build Windows EXE
+        run: npm run make
+
+      # 步骤5：上传打包产物（方便你下载）
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          # 产物路径：对应Electron Forge打包后的out目录
+          path: ./out/
+          # 产物名称（下载时显示）
+          name: windows-exe-build
