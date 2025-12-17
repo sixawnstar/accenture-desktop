@@ -1,32 +1,195 @@
 <!doctype html>
-<html>
+<html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
-    <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
-    <meta
-      http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'"
-    />
-    <meta
-      http-equiv="X-Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'"
-    />
-    <title>Hello from Electron renderer!</title>
+    <title>Electron 弹幕滚动</title>
     <style>
+      /* 页面基础样式 */
       body {
-        background-color: transparent;
         margin: 0;
         padding: 20px;
         font-family: Arial, sans-serif;
+        background-color: transparent;
       }
 
-      html {
-        background: transparent;
+      /* 弹幕容器：固定定位，铺满窗口，超出隐藏 */
+      #danmaku-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none; /* 让鼠标穿透容器 */
+        z-index: 9999;
+        overflow: hidden; /* 隐藏超出容器的内容 */
+      }
+
+      /* 弹幕样式：绝对定位，白色文字+黑色描边 */
+      .danmaku-item {
+        position: absolute;
+        white-space: nowrap; /* 禁止换行 */
+        color: #fff;
+        font-size: 18px;
+        text-shadow:
+          0 0 2px #000,
+          0 0 5px #000;
+        will-change: transform; /* 优化动画性能 */
+        animation-timing-function: linear; /* 匀速滚动 */
+        animation-fill-mode: forwards; /* 动画结束后保持最终状态 */
+        /* 提前定义动画（避免重复创建） */
+        animation-name: danmakuScroll;
+      }
+
+      /* 全局定义滚动动画（只定义一次，避免重复） */
+      @keyframes danmakuScroll {
+        0% {
+          transform: translateX(100vw);
+        } /* 初始在窗口右侧外 */
+        100% {
+          transform: translateX(-100%);
+        } /* 最终在窗口左侧外 */
+      }
+
+      /* 交互区域 */
+      #control-panel {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 10px;
+        padding: 10px;
+        background-color: rgba(0, 0, 0, 0.7);
+        border-radius: 8px;
+        z-index: 10000;
+      }
+
+      #danmaku-input {
+        width: 300px;
+        padding: 8px;
+        border: none;
+        border-radius: 4px;
+        outline: none;
+      }
+
+      #send-btn,
+      #speed-control {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 4px;
+        background-color: #409eff;
+        color: #fff;
+        cursor: pointer;
+      }
+
+      #send-btn:hover {
+        background-color: #66b1ff;
       }
     </style>
   </head>
   <body>
-    <h1>Hello from Electron renderer!</h1>
-    <p>👋</p>
+    <div id="danmaku-container"></div>
+
+    <div id="control-panel">
+      <input type="text" id="danmaku-input" placeholder="输入弹幕内容..." />
+      <button id="send-btn">发送弹幕</button>
+      <select id="speed-control">
+        <option value="15">慢速</option>
+        <option value="10" selected>中速</option>
+        <option value="5">快速</option>
+      </select>
+    </div>
+
+    <script>
+      // 引入ipcRenderer（渲染进程向主进程通信）
+      const { ipcRenderer } = require("electron");
+      // 确保DOM完全加载后再执行脚本
+      document.addEventListener("DOMContentLoaded", () => {
+        // 核心元素获取
+        const container = document.getElementById("danmaku-container");
+        const input = document.getElementById("danmaku-input");
+        const sendBtn = document.getElementById("send-btn");
+        const speedSelect = document.getElementById("speed-control");
+
+        // 生成随机垂直位置（避免重叠）
+        function getRandomTop() {
+          const min = 20; // 最小顶部距离
+          const max = window.innerHeight * 0.3; // 最大顶部距离（避免超出窗口）
+          return `${Math.floor(Math.random() * (max - min) + min)}px`;
+        }
+
+        // 发送弹幕核心函数
+        function sendDanmaku(text) {
+          // 空内容直接返回
+          if (!text || text.trim() === "") {
+            console.log("弹幕内容为空，不发送");
+            return;
+          }
+
+          console.log("发送弹幕：", text); // 控制台打印，方便排查
+
+          // 1. 创建弹幕元素
+          const danmaku = document.createElement("div");
+          danmaku.className = "danmaku-item";
+          danmaku.textContent = text.trim();
+
+          // 2. 设置基础样式
+          danmaku.style.top = getRandomTop();
+          danmaku.style.fontSize = `${16 + Math.random() * 8}px`; // 随机字体大小（可选）
+
+          // 3. 设置滚动速度（动画时长）
+          const speed = speedSelect.value;
+          danmaku.style.animationDuration = `${speed}s`;
+
+          // 4. 添加到容器
+          container.appendChild(danmaku);
+          console.log("弹幕已添加到DOM：", danmaku);
+
+          // 5. 动画结束后移除元素（优化内存）
+          danmaku.addEventListener("animationend", () => {
+            console.log("弹幕动画结束，移除元素");
+            danmaku.remove();
+          });
+
+          // 6. 清空输入框
+          input.value = "";
+        }
+
+        // 绑定发送按钮点击事件
+        sendBtn.addEventListener("click", () => {
+          sendDanmaku(input.value);
+        });
+
+        // 绑定回车键发送
+        input.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault(); // 阻止默认换行
+            sendDanmaku(input.value);
+          }
+        });
+
+        // 测试：启动后自动发送一条弹幕（验证基础功能）
+        setTimeout(() => {
+          sendDanmaku("测试弹幕 - 功能正常！");
+        }, 1000);
+
+        // ========== 新增：键盘快捷键控制全屏 ==========
+        // 监听全局键盘按下事件（document级别，全局生效）
+        document.addEventListener("keydown", (e) => {
+          // 按下Q键（不区分大小写）触发全屏
+          if (e.key.toLowerCase() === "q") {
+            e.preventDefault(); // 阻止默认行为（比如输入框输入q）
+            ipcRenderer.send("window:fullscreen"); // 向主进程发送全屏指令
+            console.log("按下Q键，请求全屏");
+          }
+          // 按下ESC键退出全屏
+          else if (e.key === "Escape") {
+            e.preventDefault();
+            ipcRenderer.send("window:exit-fullscreen"); // 向主进程发送退出全屏指令
+            console.log("按下ESC键，请求退出全屏");
+          }
+        });
+      });
+    </script>
   </body>
 </html>
