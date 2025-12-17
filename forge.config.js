@@ -29,6 +29,15 @@ module.exports = {
       platforms: ["win32"],
     },
     {
+      name: "@electron-forge/maker-squirrel",
+      config: {
+        name: "accenture-desktop",
+        description: "Accenture Desktop Application",
+        authors: "Your Name",
+        // 删除手动指定的exe路径！让Forge自动找路径
+      },
+    },
+    {
       name: "@electron-forge/maker-deb",
       config: {},
     },
